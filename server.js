@@ -3,8 +3,22 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Serve static files from the 'public' directory
+// This middleware is crucial. It serves static files like CSS and JS from the 'public' directory.
 app.use(express.static(path.join(__dirname, 'public')));
+
+// --- Page Routing ---
+
+// NEW: Route for the landing page. This is the main entry point.
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+});
+
+// NEW: Route for the main application.
+app.get('/app', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// --- API Endpoints (Unchanged) ---
 
 // Secure API endpoint to provide the embed URL
 app.get('/api/embed-url', (req, res) => {
@@ -16,7 +30,7 @@ app.get('/api/embed-url', (req, res) => {
   }
 });
 
-// NEW: Secure API endpoint to provide the Clerk Publishable Key
+// Secure API endpoint to provide the Clerk Publishable Key
 app.get('/api/clerk-key', (req, res) => {
   const clerkKey = process.env.CLERK_PUBLISHABLE_KEY;
   if (clerkKey) {

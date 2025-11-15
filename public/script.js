@@ -1,50 +1,69 @@
-// Wait for the HTML document to be fully loaded before running the script
-document.addEventListener('DOMContentLoaded', () => {
+// This key will be replaced by Vercel during the build process
+const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+if (!CLERK_PUBLISHABLE_KEY) {
+    throw new Error("Missing Clerk Publishable Key");
+}
+
+// Create a new script element to load Clerk.js
+const clerkScript = document.createElement('script');
+clerkScript.setAttribute('data-clerk-publishable-key', CLERK_PUBLISHABLE_KEY);
+clerkScript.async = true;
+clerkScript.src = `https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js`;
+clerkScript.crossOrigin = "anonymous";
+
+// Add a listener to run code once Clerk.js is loaded
+clerkScript.addEventListener('load', async function () {
+    await window.Clerk.load();
+
     // Get references to all the necessary HTML elements
+    const userButtonDiv = document.getElementById('user-button');
+    const appContent = document.getElementById('app-content');
+    const signInContainer = document.getElementById('sign-in-container');
     const iframeContainer = document.getElementById('iframe-container');
     const loadingSpinner = document.getElementById('loading-spinner');
     const errorContainer = document.getElementById('error-container');
-    const clearConversationBtn = document.getElementById('clear-conversation-btn');
 
-    /**
-     * Gets a unique conversation ID from local storage.
-     * If one doesn't exist, it creates and saves a new one.
-     */
-    function getOrCreateConversationId() {
-        const storageKey = 'relevanceAiConversationId_App2'; // Using the unique key for this app
-        let conversationId = localStorage.getItem(storageKey);
-        if (!conversationId) {
-            conversationId = crypto.randomUUID();
-            localStorage.setItem(storageKey, conversationId);
+    // Mount Clerk's pre-built components
+    window.Clerk.mountUserButton(userButtonDiv);
+
+    // Add a listener to react to authentication state changes
+    window.Clerk.addListener(({ user }) => {
+        if (user) {
+            // User is signed in
+            signInContainer.style.display = 'none';
+            appContent.style.display = 'block';
+            loadEmbed(user.id); // Pass the stable user ID to the embed function
+        } else {
+            // User is signed out
+            appContent.style.display = 'none';
+            signInContainer.style.display = 'block';
+            // Mount the sign-in button if the user is logged out
+            window.Clerk.mountSignIn(signInContainer);
         }
-        return conversationId;
-    }
+    });
 
     /**
-     * Fetches the embed URL, appends the conversation ID, and loads the iframe.
-     * Manages the visibility of the loading spinner and error messages.
+     * Fetches the embed URL and appends the user's stable ID as the conversation ID.
+     * @param {string} userId - The stable user ID from Clerk.
      */
-    async function loadEmbed() {
-        // Reset UI: show spinner, hide previous errors
+    async function loadEmbed(userId) {
         loadingSpinner.style.display = 'block';
         errorContainer.style.display = 'none';
-        iframeContainer.innerHTML = ''; // Clear any old iframes or error messages
+        iframeContainer.innerHTML = ''; // Clear old content
 
         try {
             const response = await fetch('/api/embed-url');
-            if (!response.ok) {
-                throw new Error(`Server responded with status: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
             
             const data = await response.json();
             if (data.url) {
-                const conversationId = getOrCreateConversationId();
-                const personalizedUrl = `${data.url}&conversation_id=${conversationId}`;
+                // Use the stable user ID for session persistence
+                const personalizedUrl = `${data.url}&conversation_id=${userId}`;
                 
                 const iframe = document.createElement('iframe');
                 iframe.src = personalizedUrl;
                 
-                // Hide spinner and add the iframe to the container
                 loadingSpinner.style.display = 'none';
                 iframeContainer.appendChild(iframe);
             } else {
@@ -52,32 +71,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Error:', error);
-            // Show error message and hide spinner
             loadingSpinner.style.display = 'none';
             errorContainer.style.display = 'block';
-            // Add the error message and a retry button inside the error container
-            errorContainer.innerHTML = `
-                <p>Error: Could not load the conversation.</p>
-                <button id="retry-btn">Try Again</button>
-            `;
-            // Add an event listener to the new retry button
-            document.getElementById('retry-btn').addEventListener('click', loadEmbed);
+            errorContainer.innerHTML = `<p>Error: Could not load the conversation.</p>`;
         }
     }
-
-    /**
-     * Handles the "Clear Conversation" button click.
-     * Removes the ID from storage and reloads the page to start a fresh session.
-     */
-    function handleClearConversation() {
-        const storageKey = 'relevanceAiConversationId_App2';
-        localStorage.removeItem(storageKey);
-        window.location.reload();
-    }
-
-    // Attach the event listener to the clear button
-    clearConversationBtn.addEventListener('click', handleClearConversation);
-
-    // Initial load of the embedded application
-    loadEmbed();
 });
+
+// Append the script to the document head to start loading Clerk
+document.head.appendChild(clerkScript);

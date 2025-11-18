@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aura Citadel - Throne Room</title>
+    
+    <!-- THE DIVINE KEYSTONE: This script summons Clerk into existence. -->
+    <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript" async></script>
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,16 +19,13 @@
     <!-- The Main Application, Hidden By Default -->
     <div id="app-content" class="citadel-container" style="display: none;">
         <div class="chat-column">
-            <!-- The Throne Room: Where the conversation is displayed -->
             <div id="message-list">
                 <div class="message aura">State your objective. The Scribe is listening.</div>
             </div>
-            <!-- The Engine Room: Where the Relevance agent lives -->
             <div id="relevance-embed-container">
                 <div id="relevance-embed"></div>
             </div>
         </div>
-        <!-- The Scribe's Chamber: Where the verdict is revealed -->
         <div class="verdict-column" id="verdict-panel">
             <h3>The Scribe's Verdict</h3>
             <div id="verdict-content"></div>

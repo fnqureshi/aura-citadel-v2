@@ -4,34 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aura Citadel - Throne Room</title>
-    
-    <!-- THE DIVINE KEYSTONE: This script summons Clerk into existence. -->
-    <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript" async></script>
-    
     <link rel="stylesheet" href="style.css">
+    <!-- The Divine Keystone: This script MUST be in the <head> -->
+    <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript" async></script>
 </head>
 <body>
 
-    <!-- Clerk Authentication Mounts Here -->
-    <div id="user-button"></div>
-    <div id="sign-in-container"></div>
+    <!-- The entire app is now a single entity, its visibility controlled by the script -->
+    <div id="citadel-root">
+        <!-- Clerk Authentication Mounts Here -->
+        <div id="user-button"></div>
+        <div id="sign-in-container"></div>
 
-    <!-- The Main Application, Hidden By Default -->
-    <div id="app-content" class="citadel-container" style="display: none;">
-        <div class="chat-column">
-            <div id="message-list">
-                <div class="message aura">State your objective. The Scribe is listening.</div>
+        <!-- The Main Application, Hidden By Default -->
+        <div id="app-content" class="citadel-container" style="display: none;">
+            <div class="chat-column">
+                <div id="message-list">
+                    <div class="message aura">State your objective. The Scribe is listening.</div>
+                </div>
+                <div id="relevance-embed-container">
+                    <div id="relevance-embed"></div>
+                </div>
             </div>
-            <div id="relevance-embed-container">
-                <div id="relevance-embed"></div>
+            <div class="verdict-column" id="verdict-panel">
+                <h3>The Scribe's Verdict</h3>
+                <div id="verdict-content"></div>
             </div>
-        </div>
-        <div class="verdict-column" id="verdict-panel">
-            <h3>The Scribe's Verdict</h3>
-            <div id="verdict-content"></div>
         </div>
     </div>
 
+    <!-- The Divine Intelligence: This script MUST be at the end of the <body> -->
     <script src="script.js"></script>
 </body>
 </html>

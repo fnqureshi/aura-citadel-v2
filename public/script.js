@@ -1,22 +1,67 @@
-// --- The Divine Intelligence (Upgraded) ---
+// --- The Divine Intelligence: The Unified Law ---
 
-// STEP 1: Your existing Relevance Embed Code
-(function(d, s, id) {
-    var js, fjs = d.getElementsByTagName(s)[0];
-    if (d.getElementById(id)) return;
-    js = d.createElement(s); js.id = id;
-    js.src = "https://embed.relevance.ai/embed.js";
-    fjs.parentNode.insertBefore(js, fjs);
-}(document, 'script', 'relevance-sdk'));
+const publishableKey = 'pk_test_c2ltcGxlLWZseS05OS5jbGVyay5hY2NvdW50cy5kZXYk'; // Your Clerk Key
 
-window.addEventListener('relevance-ready', function () {
-    window.relevance.embed({
-        appId: "c3d65595-930e-4a8a-9049-6157531e1b7c", // Your App ID
-        containerId: "relevance-embed"
-    });
+const signInContainer = document.getElementById('sign-in-container');
+const userButton = document.getElementById('user-button');
+const appContent = document.getElementById('app-content');
+
+const Clerk = window.Clerk;
+const clerk = new Clerk(publishableKey);
+
+clerk.load();
+
+clerk.addListener(({ user }) => {
+    if (user) {
+        // User is signed in
+        signInContainer.style.display = 'none';
+        appContent.style.display = 'flex'; // Reveal the Citadel
+        clerk.mountUserButton(userButton);
+        initializeRelevance();
+    } else {
+        // User is signed out
+        appContent.style.display = 'none';
+        signInContainer.style.display = 'flex';
+        clerk.mountSignIn(signInContainer);
+    }
 });
 
-// STEP 2: The Viceroy's Listening Post (NEW LOGIC)
+async function initializeRelevance() {
+    try {
+        const token = await clerk.session.getToken({ template: 'relevance-jwt' });
+        
+        // Load the Relevance SDK
+        (function(d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) {
+                // If SDK already exists, just embed
+                window.relevance.embed({
+                    appId: "c3d65595-930e-4a8a-9049-6157531e1b7c",
+                    containerId: "relevance-embed",
+                    token: token
+                });
+                return;
+            }
+            js = d.createElement(s); js.id = id;
+            js.src = "https://embed.relevance.ai/embed.js";
+            fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'relevance-sdk'));
+
+        // Embed the agent once the SDK is ready
+        window.addEventListener('relevance-ready', function () {
+            window.relevance.embed({
+                appId: "c3d65595-930e-4a8a-9049-6157531e1b7c",
+                containerId: "relevance-embed",
+                token: token
+            });
+        });
+
+    } catch (error) {
+        console.error("Error initializing Relevance:", error);
+    }
+}
+
+// --- The Viceroy's Listening Post ---
 const messageList = document.getElementById('message-list');
 const verdictPanel = document.getElementById('verdict-panel');
 const verdictContent = document.getElementById('verdict-content');
@@ -30,7 +75,6 @@ window.addEventListener('message', function(event) {
         if (sender === 'user') {
             addMessageToChat('user', content);
         } else if (sender === 'bot') {
-            // The Bridge Logic: Handles both old and new agent formats
             try {
                 const data = JSON.parse(content);
                 addMessageToChat('aura', data.aiResponse);

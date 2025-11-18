@@ -1,44 +1,34 @@
 const express = require('express');
 const path = require('path');
-const app = express();
-const PORT = process.env.PORT || 3000;
+const Clerk = require('@clerk/clerk-sdk-node');
 
-// Serves static files like CSS and JS from the 'public' directory.
+const app = express();
+const port = process.env.PORT || 3000;
+
+// This is the new, critical law: Serve ALL static files from the 'public' directory.
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- Page Routing ---
-
-// Route for the landing page.
+// The Royal Road to the Antechamber
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+    res.sendFile(path.join(__dirname, 'public', 'landing.html'));
 });
 
-// Route for the main application.
-// UPDATED: This now points to app.html instead of index.html
+// The Royal Road to the Throne Room
 app.get('/app', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'app.html'));
+    res.sendFile(path.join(__dirname, 'public', 'app.html'));
 });
 
-// --- API Endpoints (Unchanged) ---
-
-app.get('/api/embed-url', (req, res) => {
-  const embedUrl = process.env.EMBED_URL;
-  if (embedUrl) {
-    res.json({ url: embedUrl });
-  } else {
-    res.status(500).json({ error: 'Embed URL is not configured on the server.' });
-  }
+// The Secure Endpoint for the Sacred Key
+app.get('/api/token', Clerk.expressWithAuth(), async (req, res) => {
+    try {
+        const token = await req.auth.getToken({ template: 'relevance-jwt' });
+        res.json({ token });
+    } catch (error) {
+        console.error("Error fetching token:", error);
+        res.status(500).json({ error: 'Failed to fetch token' });
+    }
 });
 
-app.get('/api/clerk-key', (req, res) => {
-  const clerkKey = process.env.CLERK_PUBLISHABLE_KEY;
-  if (clerkKey) {
-    res.json({ key: clerkKey });
-  } else {
-    res.status(500).json({ error: 'Clerk key is not configured on the server.' });
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+app.listen(port, () => {
+    console.log(`The Aura Citadel is listening on port ${port}`);
 });

@@ -1,8 +1,8 @@
 const express = require('express');
 const path = require('path');
-const { ClerkExpressWithAuth } = require('@clerk/clerk-sdk-node');
+const { clerkMiddleware } = require('@clerk/express');
 
-// Check for essential Clerk environment variables
+// This check is still important
 if (!process.env.CLERK_SECRET_KEY || !process.env.CLERK_PUBLISHABLE_KEY) {
   throw new Error('Missing Clerk environment variables. Please set CLERK_SECRET_KEY and CLERK_PUBLISHABLE_KEY.');
 }
@@ -10,7 +10,11 @@ if (!process.env.CLERK_SECRET_KEY || !process.env.CLERK_PUBLISHABLE_KEY) {
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Serve all static files from the 'public' directory
+// Add the Clerk middleware. It should be one of the first middleware.
+// This will make the `req.auth` object available on all routes.
+app.use(clerkMiddleware());
+
+// Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Route for the landing page
@@ -24,7 +28,12 @@ app.get('/app', (req, res) => {
 });
 
 // Secure endpoint to get the authentication token
-app.get('/api/token', ClerkExpressWithAuth(), async (req, res) => {
+app.get('/api/token', async (req, res) => {
+    // Check if the user is authenticated before proceeding
+    if (!req.auth.userId) {
+        return res.status(401).json({ error: 'Unauthenticated request' });
+    }
+
     try {
         const token = await req.auth.getToken({ template: 'relevance-jwt' });
         res.json({ token });
@@ -37,7 +46,7 @@ app.get('/api/token', ClerkExpressWithAuth(), async (req, res) => {
 // Export the app for Vercel
 module.exports = app;
 
-// This part is for local development only, Vercel will ignore it
+// This part is for local development only
 if (process.env.NODE_ENV !== 'production') {
   app.listen(port, () => {
       console.log(`The Aura Citadel is listening on port ${port}`);

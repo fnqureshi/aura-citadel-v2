@@ -1,84 +1,71 @@
-// This function will now fetch the key from our own server
-async function initializeClerk() {
-    try {
-        const response = await fetch('/api/clerk-key');
-        if (!response.ok) {
-            throw new Error('Could not fetch Clerk configuration.');
-        }
-        const data = await response.json();
-        const CLERK_PUBLISHABLE_KEY = data.key;
+// --- The Divine Intelligence (Upgraded) ---
 
-        if (!CLERK_PUBLISHABLE_KEY) {
-            throw new Error("Missing Clerk Publishable Key from server.");
-        }
+// STEP 1: Your existing Relevance Embed Code
+(function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "https://embed.relevance.ai/embed.js";
+    fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'relevance-sdk'));
 
-        // Create a new script element to load Clerk.js
-        const clerkScript = document.createElement('script');
-        clerkScript.setAttribute('data-clerk-publishable-key', CLERK_PUBLISHABLE_KEY);
-        clerkScript.async = true;
-        clerkScript.src = `https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js`;
-        clerkScript.crossOrigin = "anonymous";
-        clerkScript.addEventListener('load', onClerkLoaded);
-        document.head.appendChild(clerkScript);
-
-    } catch (error) {
-        console.error("Failed to initialize Clerk:", error);
-        document.body.innerHTML = '<p style="color: red; text-align: center;">Error: Application could not be initialized. Please check the console.</p>';
-    }
-}
-
-// This function runs after the Clerk script has successfully loaded
-async function onClerkLoaded() {
-    await window.Clerk.load();
-
-    const userButtonDiv = document.getElementById('user-button');
-    const appContent = document.getElementById('app-content');
-    const signInContainer = document.getElementById('sign-in-container');
-    const iframeContainer = document.getElementById('iframe-container');
-    const loadingSpinner = document.getElementById('loading-spinner');
-    const errorContainer = document.getElementById('error-container');
-
-    window.Clerk.mountUserButton(userButtonDiv);
-
-    window.Clerk.addListener(({ user }) => {
-        if (user) {
-            signInContainer.style.display = 'none';
-            appContent.style.display = 'block';
-            loadEmbed(user.id);
-        } else {
-            appContent.style.display = 'none';
-            signInContainer.style.display = 'block';
-            window.Clerk.mountSignIn(signInContainer);
-        }
+window.addEventListener('relevance-ready', function () {
+    window.relevance.embed({
+        appId: "c3d65595-930e-4a8a-9049-6157531e1b7c", // Your App ID
+        containerId: "relevance-embed"
     });
+});
 
-    async function loadEmbed(userId) {
-        loadingSpinner.style.display = 'block';
-        errorContainer.style.display = 'none';
-        iframeContainer.innerHTML = '';
+// STEP 2: The Viceroy's Listening Post (NEW LOGIC)
+const messageList = document.getElementById('message-list');
+const verdictPanel = document.getElementById('verdict-panel');
+const verdictContent = document.getElementById('verdict-content');
 
-        try {
-            const response = await fetch('/api/embed-url');
-            if (!response.ok) throw new Error(`Server responded with status: ${response.status}`);
-            
-            const data = await response.json();
-            if (data.url) {
-                const personalizedUrl = `${data.url}&conversation_id=${userId}`;
-                const iframe = document.createElement('iframe');
-                iframe.src = personalizedUrl;
-                loadingSpinner.style.display = 'none';
-                iframeContainer.appendChild(iframe);
-            } else {
-                throw new Error('Embed URL was not provided by the server.');
+window.addEventListener('message', function(event) {
+    if (event.origin !== 'https://embed.relevance.ai') return;
+
+    const { type, content, sender } = event.data;
+
+    if (type === 'message') {
+        if (sender === 'user') {
+            addMessageToChat('user', content);
+        } else if (sender === 'bot') {
+            // The Bridge Logic: Handles both old and new agent formats
+            try {
+                const data = JSON.parse(content);
+                addMessageToChat('aura', data.aiResponse);
+                displayVerdict(data.linguisticVerdict);
+            } catch (error) {
+                addMessageToChat('aura', content);
+                verdictPanel.style.display = 'none';
             }
-        } catch (error) {
-            console.error('Error:', error);
-            loadingSpinner.style.display = 'none';
-            errorContainer.style.display = 'block';
-            errorContainer.innerHTML = `<p>Error: Could not load the conversation.</p>`;
         }
     }
+});
+
+function addMessageToChat(sender, text) {
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message', sender);
+    messageDiv.textContent = text;
+    messageList.appendChild(messageDiv);
+    messageList.scrollTop = messageList.scrollHeight;
 }
 
-// Start the initialization process when the DOM is ready
-document.addEventListener('DOMContentLoaded', initializeClerk);
+function displayVerdict(verdict) {
+    if (!verdict || !verdict.phrasesFound || verdict.phrasesFound.length === 0) {
+        verdictPanel.style.display = 'none';
+        return;
+    }
+    verdictContent.innerHTML = '';
+    verdict.phrasesFound.forEach(item => {
+        const verdictItem = document.createElement('div');
+        verdictItem.classList.add('verdict-item');
+        verdictItem.innerHTML = `
+            <p><strong>Phrase:</strong> "${item.phrase}"</p>
+            <p><strong>Category:</strong> ${item.category}</p>
+            <p><strong>Sovereign Refactor:</strong> "${item.sovereignRefactor}"</p>
+        `;
+        verdictContent.appendChild(verdictItem);
+    });
+    verdictPanel.style.display = 'block';
+}

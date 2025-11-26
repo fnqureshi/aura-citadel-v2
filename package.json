@@ -8,6 +8,8 @@
   },
   "dependencies": {
     "@clerk/express": "^0.2.3",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "@google/generative-ai": "^0.1.3",
+    "axios": "^1.6.8"
   }
 }
